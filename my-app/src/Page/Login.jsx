@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { AppContext } from '../Context/AppContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -14,52 +14,54 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   const onSubmitHandler = async (event) => {
-  event.preventDefault();
-  setLoading(true);
+    event.preventDefault();
+    setLoading(true);
 
-  try {
-    if (state === 'Sign Up') {
-      const { data } = await axios.post(`${backendUrl}/api/user/register`, {
-        name,
-        email,
-        password,
-      });
+    console.log("Form Submitted:", { name, email, password, state });
+    console.log("Backend URL:", backendUrl);
 
-      if (data.success) {
-        toast.success(data.message || 'Account created successfully!');
-        localStorage.setItem('token', data.token);
-        setToken(data.token);
-        navigate('/'); // ✅ redirect right here
+    try {
+      if (state === 'Sign Up') {
+        const { data } = await axios.post(`${backendUrl}/api/user/register`, {
+          name,
+          email,
+          password,
+        });
+
+        console.log("Signup response:", data);
+
+        if (data.success) {
+          toast.success(data.message || 'Account created successfully!');
+          localStorage.setItem('token', data.token);
+          setToken(data.token);
+          navigate('/');
+        } else {
+          toast.error(data.message || 'Signup failed');
+        }
       } else {
-        toast.error(data.message || 'Signup failed');
-      }
-    } else {
-      const { data } = await axios.post(`${backendUrl}/api/user/login`, {
-        email,
-        password,
-      });
+        const { data } = await axios.post(`${backendUrl}/api/user/login`, {
+          email,
+          password,
+        });
 
-      if (data.success) {
-        toast.success(data.message || 'Login successful!');
-        localStorage.setItem('token', data.token);
-        setToken(data.token);
-        navigate('/'); // ✅ same here
-      } else {
-        toast.error(data.message || 'Login failed');
+        console.log("Login response:", data);
+
+        if (data.success) {
+          toast.success(data.message || 'Login successful!');
+          localStorage.setItem('token', data.token);
+          setToken(data.token);
+          navigate('/');
+        } else {
+          toast.error(data.message || 'Login failed');
+        }
       }
+    } catch (error) {
+      console.error("Error during auth:", error);
+      toast.error(error.response?.data?.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    toast.error(error.response?.data?.message || error.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  // useEffect(() => {
-  //   if (token) {
-  //     navigate('/');
-  //   }
-  // }, [token, navigate]);
+  };
 
   return (
     <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
@@ -86,7 +88,7 @@ const Login = () => {
             className="border border-zinc-300 rounded w-full p-2 mt-1"
             type="email"
             onChange={(e) => setEmail(e.target.value)}
-            value={email} // ✅ this was missing
+            value={email}
             required
           />
         </div>
