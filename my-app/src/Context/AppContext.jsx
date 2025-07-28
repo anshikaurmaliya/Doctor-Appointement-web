@@ -10,24 +10,25 @@ const AppContextProvider = (props) => {
 
   const [doctors, setDoctors] = useState([]);
   const [token, setToken] = useState(localStorage.getItem("token") || null);
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState(false);
 
-  // Load all doctors
-  useEffect(() => {
-    const getDoctorsData = async () => {
-      try {
-        const { data } = await axios.get(`${backendUrl}/api/doctor/list`);
-        if (data.success) {
-          setDoctors(data.doctors);
-        } else {
-          toast.error(data.message || "Failed to fetch doctors");
-        }
-      } catch (error) {
-        console.log(error);
-        toast.error("Error loading doctors list");
+  // ✅ FIX: Define it outside so it can be used anywhere in this component
+  const getDoctorsData = async () => {
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/doctor/list`);
+      if (data.success) {
+        setDoctors(data.doctors);
+      } else {
+        toast.error(data.message || "Failed to fetch doctors");
       }
-    };
+    } catch (error) {
+      console.log(error);
+      toast.error("Error loading doctors list");
+    }
+  };
 
+  // Load all doctors on component mount
+  useEffect(() => {
     getDoctorsData();
   }, [backendUrl]);
 
@@ -39,7 +40,7 @@ const AppContextProvider = (props) => {
       });
 
       if (data.success) {
-        setUserData(data.user); // ✅ Expecting `user` key from backend
+        setUserData(data.user);
       } else {
         toast.error(data.message || "Failed to load profile");
       }
@@ -49,12 +50,12 @@ const AppContextProvider = (props) => {
     }
   };
 
-  // Load profile if token is available
+  // Load profile if token exists
   useEffect(() => {
     if (token) {
       loadUserProfileData();
     } else {
-      setUserData(null); // ✅ null instead of false
+      setUserData(null);
     }
   }, [token]);
 
@@ -62,6 +63,7 @@ const AppContextProvider = (props) => {
     currencySmbol,
     backendUrl,
     doctors,
+    getDoctorsData, // ✅ now it's accessible here
     token,
     setToken,
     userData,
