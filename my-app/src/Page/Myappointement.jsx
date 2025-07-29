@@ -1,12 +1,14 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../Context/AppContext";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Myappointement = () => {
   const { backendUrl, token } = useContext(AppContext);
   const [appointments, setAppointments] = useState([]);
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+  const navigate = useNavigate()
   const slotDateFormat = (slotDate) => {
   const dateArray = slotDate.split('_');
   const day = dateArray[0];
@@ -24,7 +26,7 @@ const Myappointement = () => {
 
       if (data.success) {
         setAppointments(data.appointments)
-        console.log("Appointments:", data.appointments);
+        // console.log("Appointments:", data.appointments);
       } else {
         toast.error(data.message || "Failed to load appointments");
       }
@@ -50,7 +52,6 @@ const Myappointement = () => {
     if (data.success) {
       toast.success(data.message);
       getUserAppointments(); // Refresh appointments after cancellation
-      getDoctorsData(); // ✅ Refresh slots availability
 
     } else {
       toast.error(data.message);
@@ -61,6 +62,61 @@ const Myappointement = () => {
   }
 };
 
+const initpay = (order)=>{
+const options = {
+    key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Your Razorpay public key
+    amount: order.amount,                      // Amount in paise (e.g. ₹500 => 50000)
+    currency: order.currency,                  // Currency (e.g. INR)
+    name: 'Appointment Payment',
+    description: 'Appointment Payment',
+    order_id: order.id,                        // Razorpay order_id from backend
+    receipt: order.receipt,
+    handler: async (response) => {
+      console.log("Payment Success:", response);
+    try {
+      const {data} = await axios.post(backendUrl+'/api/user/verifyRazorpay',response,{
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if(data.success){
+        getUserAppointments()
+        navigate('/my-appointments')
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
+      
+    }
+      // You can add an API call here to verify the payment and update backend
+      // Example: await axios.post('/api/user/payment-success', response)
+    },
+    theme: {
+      color: '#3399cc',
+    },
+  };
+ console.log("Razorpay Options:", options);
+
+  const rzp = new window.Razorpay(options);
+  rzp.open();
+}
+
+const appointmentRazorpay = async (appointmentId)=>{
+  try{
+    const {data} = await axios.post(backendUrl+'/api/user/payment-razorpay',{appointmentId},{
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if(data.success){
+        console.log("Razorpay Order from backend:", data.order);
+
+        initpay(data.order)
+      }
+  }catch(error){
+
+  }
+}
 
   useEffect(() => {
     if (token) getUserAppointments();
@@ -98,9 +154,8 @@ const Myappointement = () => {
                 </p>
               </div>
               <div className="flex flex-col gap-2 justify-end">
-               {!item.cancelled && <button className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300">
-                  Pay Online
-                </button>}
+                {!item.cancelled && item.payment && <button className="sm:min-w-48 py-2 border rounded text-stone-500 bg-indigo-100 ">Paid</button> }
+               {!item.cancelled && !item.payment && <button onClick={()=>appointmentRazorpay(item._id)} className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300">Pay Online</button>}
                 {!item.cancelled && <button onClick={()=>cancelAppointment(item._id)} className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300">Cancel appointmen </button>}
                 {item.cancelled && <button className="sm:min-w-48 border py-1 border-red-500 rounded text-red-500">Appointment cancelled</button>}
               </div>
