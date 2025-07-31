@@ -131,13 +131,14 @@ const bookAppointment = async (req, res) => {
       return res.json({ success: false, message: "Missing appointment details (doctor, date, or time)" });
     }
 
-    const docData = await doctorModel.findById(docId).select("-password");
-    if (!docData.available) {
+    // ✅ Get doctor data
+    const docDataDoc = await doctorModel.findById(docId).select("-password");
+    if (!docDataDoc || !docDataDoc.available) {
       return res.json({ success: false, message: "Doctor not available" });
     }
 
-    // Update doctor slots
-    let slots_booked = docData.slots_booked || {};
+    // ✅ Update doctor slot bookings
+    let slots_booked = docDataDoc.slots_booked || {};
     if (slots_booked[slotDate]) {
       if (slots_booked[slotDate].includes(slotTime)) {
         return res.json({ success: false, message: "Slot not available" });
@@ -148,13 +149,18 @@ const bookAppointment = async (req, res) => {
       slots_booked[slotDate] = [slotTime];
     }
 
-    const userData = await userModel.findById(userId).select("-password");
-    if (!userData) {
+    // ✅ Get user data
+    const userDataDoc = await userModel.findById(userId).select("-password");
+    if (!userDataDoc) {
       return res.json({ success: false, message: "User not found" });
     }
 
-    delete docData.slots_booked;
+    // ✅ Convert documents to plain objects
+    const userData = userDataDoc.toObject();
+    const docData = docDataDoc.toObject();
+    delete docData.slots_booked; // optional: don’t store slot history in appointment
 
+    // ✅ Create and save appointment
     const appointmentData = {
       userId,
       docId,
@@ -172,11 +178,13 @@ const bookAppointment = async (req, res) => {
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
     res.json({ success: true, message: "Appointment Booked" });
+
   } catch (error) {
-    console.error(error);
+    console.error("Book Appointment Error:", error);
     res.json({ success: false, message: error.message });
   }
 };
+
 
 // ===============================
 // ✅ List Appointments

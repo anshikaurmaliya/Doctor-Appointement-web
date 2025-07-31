@@ -8,16 +8,16 @@ const Myappointement = () => {
   const { backendUrl, token } = useContext(AppContext);
   const [appointments, setAppointments] = useState([]);
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-  const navigate = useNavigate()
   const slotDateFormat = (slotDate) => {
-  const dateArray = slotDate.split('_');
-  const day = dateArray[0];
-  const monthIndex = Number(dateArray[1]) - 1; // ✅ Fix here
-  const year = dateArray[2];
-
-  return `${day} ${months[monthIndex]} ${year}`;
-};
-
+    const dateArray = slotDate.split('_');
+    const day = dateArray[0];
+    const monthIndex = Number(dateArray[1]) - 1; // ✅ Fix here
+    const year = dateArray[2];
+    
+    return `${day} ${months[monthIndex]} ${year}`;
+  };
+  
+  const navigate = useNavigate()
   const getUserAppointments = async () => {
     try {
       const { data } = await axios.get(`${backendUrl}/api/user/appointments`, {

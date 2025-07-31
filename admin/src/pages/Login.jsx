@@ -3,12 +3,13 @@ import { assets } from "../assets/assets";
 import { AdminContext } from "../context/AdminContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { DoctorContext } from "../context/DoctorContext";
 const Login = () => {
     const [state, setState] = useState("Admin"); // 👈 default is Admin
     const [email, setemail] = useState("");
   const [password, setPassword] = useState("");
   const { setAtoken, backendUrl } = useContext(AdminContext);
-
+  const{setDToken} = useContext(DoctorContext)
   const onSubmitHandler = async (event) => {
     event.preventDefault();
   
@@ -28,6 +29,16 @@ const Login = () => {
         }
       } else {
         // Doctor login (you can add it later)
+
+        const {data} = await axios.post(backendUrl + '/api/doctor/login',{email,password})
+        if (data.success) {  // ✅ correct spelling
+          console.log(data.token);
+            localStorage.setItem('dToken',data.token)
+          setDToken(data.token);
+          console.log(data.token)
+        } else {
+            toast.error(data.message)
+        }
       }
     } catch (error) {
       console.error("Error during login:", error);
