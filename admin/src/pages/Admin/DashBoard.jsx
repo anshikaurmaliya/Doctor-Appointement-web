@@ -80,16 +80,12 @@ const DashBoard = () => {
                   </div>
                 </div>
 
-                {item.cancelled ? (
-                  <p className="text-red-500 text-xs font-medium">Cancelled</p>
-                ) : (
-                  <img
-                    onClick={() => cancelAppointment(item._id)}
-                    className="w-6 sm:w-8 cursor-pointer"
-                    src={assets.cancel_icon}
-                    alt=""
-                  />
-                )}
+               {
+                 item.cancelled ? <p className='text-red-400 text-xs font-medium'>Cancelled</p>
+                   : item.isCompleted
+                   ?<p className='text-green-500 text-xs font-medium'>Completed</p>
+                    :<img onClick={()=>cancelAppointment(item._id)} className='w-10 cursor-pointer' src={assets.cancel_icon} alt="" />
+               }
               </div>
             ))}
           </div>
